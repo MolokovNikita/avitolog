@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { AppLogger } from './patterns/singleton/AppLogger.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.routes.js';
 import clientsRoutes from './routes/clients.routes.js';
@@ -44,7 +45,10 @@ app.use(notFound);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  const log = AppLogger.getInstance();
+  log.info(`Server running on port ${PORT}`, { port: PORT });
+  log.info(`Environment: ${process.env.NODE_ENV || 'development'}`, {
+    nodeEnv: process.env.NODE_ENV || 'development',
+  });
 });
 

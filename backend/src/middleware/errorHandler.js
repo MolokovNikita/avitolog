@@ -1,5 +1,7 @@
+import { AppLogger } from '../patterns/singleton/AppLogger.js';
+
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
+  AppLogger.getInstance().error(err.message || 'Error', err);
 
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';

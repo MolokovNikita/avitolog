@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult, query } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
+import { AppLogger } from '../patterns/singleton/AppLogger.js';
 
 const router = express.Router();
 
@@ -60,8 +61,10 @@ router.get('/', [
         offset,
       },
     });
-    
-    console.log(`Products fetched for user ${req.user.userId}: ${result.rows.length} items`);
+
+    AppLogger.getInstance().audit(req.user.userId, 'products.list', {
+      count: result.rows.length,
+    });
   } catch (error) {
     next(error);
   }

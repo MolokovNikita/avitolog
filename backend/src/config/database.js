@@ -1,5 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { AppLogger } from '../patterns/singleton/AppLogger.js';
 
 dotenv.config();
 
@@ -15,11 +16,11 @@ const pool = new Pool({
 
 // Проверка подключения
 pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
+  AppLogger.getInstance().info('Connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
+  AppLogger.getInstance().error('Unexpected error on idle PostgreSQL client', err);
   process.exit(-1);
 });
 

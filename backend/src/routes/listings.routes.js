@@ -2,6 +2,8 @@ import express from 'express';
 import { body, validationResult, query } from 'express-validator';
 import pool from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
+import { AppLogger } from '../patterns/singleton/AppLogger.js';
+import { estimateFeeForListing } from '../patterns/strategy/marketplaceFeeStrategies.js';
 import { uploadListingImages } from '../middleware/upload.js';
 import fs from 'fs';
 import path from 'path';
@@ -83,6 +85,19 @@ router.get('/', [
       }));
     }
 
+    listingsWithMedia = listingsWithMedia.map((listing) => {
+      const fee = estimateFeeForListing(listing.marketplace, listing.product_price ?? listing.price);
+      return {
+        ...listing,
+        estimated_marketplace_fee: fee.estimatedCommission,
+        fee_strategy: fee.strategyKey,
+      };
+    });
+
+    AppLogger.getInstance().audit(req.user.userId, 'listings.list', {
+      count: listingsWithMedia.length,
+    });
+
     const countQuery = `
       SELECT COUNT(*) 
       FROM listings l
@@ -143,6 +158,12 @@ router.get('/:id', async (req, res, next) => {
     const listing = result.rows[0];
     listing.media = mediaResult.rows;
 
+    const fee = estimateFeeForListing(listing.marketplace, listing.product_price ?? listing.price);
+    listing.estimated_marketplace_fee = fee.estimatedCommission;
+    listing.fee_strategy = fee.strategyKey;
+
+    AppLogger.getInstance().audit(req.user.userId, 'listings.view', { listingId: listing.id });
+
     res.json({
       success: true,
       data: listing,
@@ -192,9 +213,22 @@ router.post('/', [
       [product_id, marketplace, external_id || null, title || null, description || null, price || null, status || 'draft']
     );
 
+    const row = result.rows[0];
+    const fee = estimateFeeForListing(row.marketplace, row.price);
+    const data = {
+      ...row,
+      estimated_marketplace_fee: fee.estimatedCommission,
+      fee_strategy: fee.strategyKey,
+    };
+
+    AppLogger.getInstance().audit(req.user.userId, 'listings.create', {
+      listingId: row.id,
+      marketplace: row.marketplace,
+    });
+
     res.status(201).json({
       success: true,
-      data: result.rows[0],
+      data,
     });
   } catch (error) {
     next(error);
