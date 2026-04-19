@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
 });
 
 // Фильтр файлов (только изображения)
-const fileFilter = (req, file, cb) => {
+export const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);

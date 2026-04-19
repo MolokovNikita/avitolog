@@ -6,3 +6,7 @@ dist/
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# Test coverage output
+backend/coverage/
+frontend/coverage/
+
